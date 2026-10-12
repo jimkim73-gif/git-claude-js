@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>fetch</title>
+</head>
+<body>
+    <!-- 사용자 목록이 출력될 영역 -->
+    <div id="user-list"></div>
+
+    <script>
+        // [1] 데이터 요청 함수 (재사용 가능)
+        // - async: 비동기 함수로 선언, 항상 Promise를 반환한다.
+        // - url: 요청을 보낼 주소를 매개변수로 받아 어떤 API에도 사용할 수 있다.
+        async function fetchData(url) {
+            // await: fetch의 응답(Response)이 도착할 때까지 기다린다.
+            const response = await fetch(url);
+
+            // 응답 상태 코드가 200~299가 아니면 에러를 발생시킨다.
+            if (!response.ok) {
+                throw new Error(`요청 실패: ${response.status}`);
+            }
+
+            // 응답 본문(JSON)을 자바스크립트 객체/배열로 변환하여 반환한다.
+            return await response.json();
+        }
+
+        // [2] 목록 렌더링 함수 (재사용 가능)
+        // - items: 출력할 데이터 배열
+        // - container: 목록을 넣을 DOM 요소
+        // - format: 각 항목을 문자열로 바꾸는 함수 (출력 형식을 바꿀 수 있다)
+        function renderList(items, container, format) {
+            // ul 요소 생성
+            const ul = document.createElement('ul');
+
+            // 배열을 순회하며 항목마다 li 요소를 만들어 ul에 추가한다.
+            items.forEach((item) => {
+                const li = document.createElement('li');
+                // textContent 사용: HTML로 해석되지 않아 XSS에 안전하다.
+                li.textContent = format(item);
+                ul.appendChild(li);
+            });
+
+            // 기존 내용을 비우고 완성된 ul을 화면에 추가한다.
+            container.replaceChildren(ul);
+        }
+
+        // [3] 실행 함수
+        // - 데이터를 가져온 뒤 이름과 이메일을 목록으로 출력한다.
+        // - try/catch: 네트워크 오류나 응답 오류를 처리한다.
+        async function showUsers() {
+            const container = document.getElementById('user-list');
+            try {
+                const users = await fetchData('https://jsonplaceholder.typicode.com/users');
+                renderList(users, container, (user) => `${user.name} (${user.email})`);
+            } catch (error) {
+                // 실패 시 화면에 에러 메시지를 표시한다.
+                container.textContent = `오류 발생: ${error.message}`;
+            }
+        }
+
+        // [4] 함수 호출 - 페이지 로드 시 실행
+        showUsers();
+    </script>
+</body>
+</html>
